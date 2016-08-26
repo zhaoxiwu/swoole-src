@@ -820,15 +820,22 @@ typedef struct _swCond
     void (*free)(struct _swCond *object);
 } swCond;
 
+//-------------Share Memory--------------------------------
 #define SW_SHM_MMAP_FILE_LEN  64
 
 typedef struct _swShareMemory_mmap
 {
+    //内存大小
     int size;
+    //mapfile的路径
     char mapfile[SW_SHM_MMAP_FILE_LEN];
+    //fopen 返回的文件描述法
     int tmpfd;
+    //Share Memory key
     int key;
+    //shmget返回的值
     int shmid;
+    //内存首地址
     void *mem;
 } swShareMemory;
 
@@ -858,13 +865,14 @@ typedef struct _swFixedPool_slice
 typedef struct _swFixedPool
 {
     void *memory;
+    //memory的大小
     size_t size;
 
     swFixedPool_slice *head;
     swFixedPool_slice *tail;
 
     /**
-     * total memory size
+     * 分片个数
      */
     uint32_t slice_num;
 
@@ -874,7 +882,7 @@ typedef struct _swFixedPool
     uint32_t slice_use;
 
     /**
-     * Fixed slice size, not include the memory used by swFixedPool_slice
+     * 分片大小 
      */
     uint32_t slice_size;
 

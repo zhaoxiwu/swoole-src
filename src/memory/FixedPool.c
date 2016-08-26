@@ -28,10 +28,16 @@ void swFixedPool_debug_slice(swFixedPool_slice *slice);
  */
 swMemoryPool* swFixedPool_new(uint32_t slice_num, uint32_t slice_size, uint8_t shared)
 {
+    //真正内存大小,也就是swFixedPool中memory地址空间的大小
     size_t size = slice_size * slice_num + slice_num * sizeof(swFixedPool_slice);
+    //实际内存+2个结构体的头
     size_t alloc_size = size + sizeof(swFixedPool) + sizeof(swMemoryPool);
     void *memory = (shared == 1) ? sw_shm_malloc(alloc_size) : sw_malloc(alloc_size);
 
+
+    // |------------------------.obj
+    // swFixedPool + swMemoryPool + swFixedPool_slices
+    //           .memory-----------|
     swFixedPool *object = memory;
     memory += sizeof(swFixedPool);
     bzero(object, sizeof(swFixedPool));
@@ -43,6 +49,7 @@ swMemoryPool* swFixedPool_new(uint32_t slice_num, uint32_t slice_size, uint8_t s
 
     swMemoryPool *pool = memory;
     memory += sizeof(swMemoryPool);
+    //缺少了 bzero(pool, sizeof(swMemoryPool));
     pool->object = object;
     pool->alloc = swFixedPool_alloc;
     pool->free = swFixedPool_free;
@@ -92,6 +99,8 @@ swMemoryPool* swFixedPool_new2(uint32_t slice_size, void *memory, size_t size)
 
 /**
  * linked list
+ * swFixedPool->memory: |[]<->[]<->[]<->[]|
+ *              ->tail->|.................|<-head
  */
 static void swFixedPool_init(swFixedPool *object)
 {
@@ -129,6 +138,10 @@ static void swFixedPool_init(swFixedPool *object)
     } while (1);
 }
 
+ /**
+  * swFixedPool->memory: |[1]<->[1]<->[0]<->[0]|
+  *              ->tail->|.................|<-head
+  */
 static void* swFixedPool_alloc(swMemoryPool *pool, uint32_t size)
 {
     swFixedPool *object = pool->object;
@@ -169,6 +182,7 @@ static void swFixedPool_free(swMemoryPool *pool, void *ptr)
 
     assert(ptr > object->memory && ptr < object->memory + object->size);
 
+    /* ptr为swFixedPool_slice.data, 减去结构体大小的长度可以获取头数据 */
     slice = ptr - sizeof(swFixedPool_slice);
 
     if (slice->lock)
