@@ -35,6 +35,8 @@ int swPipeBase_create(swPipe *p, int blocking)
         return -1;
     }
     p->blocking = blocking;
+    //pipe 创建一个单向channel,生成2个文件描述符，pipe[0]读，pipe[1]写入
+    //success return 0 
     ret = pipe(object->pipes);
     if (ret < 0)
     {

@@ -78,6 +78,7 @@ swReactor_handle swReactor_getHandle(swReactor *reactor, int event_type, int fdt
 
 int swReactor_setHandle(swReactor *reactor, int _fdtype, swReactor_handle handle)
 {
+    //判断是否超出规定值范围
     int fdtype = swReactor_fdtype(_fdtype);
 
     if (fdtype >= SW_MAX_FDTYPE)
@@ -107,6 +108,7 @@ int swReactor_setHandle(swReactor *reactor, int _fdtype, swReactor_handle handle
     return SW_OK;
 }
 
+//swCallback 只有一个viod * 参数
 static int swReactor_defer(swReactor *reactor, swCallback callback, void *data)
 {
     swDefer_callback *cb = sw_malloc(sizeof(swDefer_callback));
@@ -121,6 +123,7 @@ static int swReactor_defer(swReactor *reactor, swCallback callback, void *data)
     return SW_OK;
 }
 
+//获取一个socket, 其实是一个swConnection
 swConnection* swReactor_get(swReactor *reactor, int fd)
 {
     assert(fd < SwooleG.max_sockets);
@@ -144,6 +147,7 @@ swConnection* swReactor_get(swReactor *reactor, int fd)
     return socket;
 }
 
+//设置fd对应的connection的fdtype, events(read,write,error)
 int swReactor_add(swReactor *reactor, int fd, int fdtype)
 {
     assert (fd <= SwooleG.max_sockets);
@@ -233,7 +237,7 @@ static void swReactor_onTimeout(swReactor *reactor)
         reactor->disable_accept = 0;
     }
 }
-
+//同时触发 defer_callback_list
 static void swReactor_onFinish(swReactor *reactor)
 {
     //check signal

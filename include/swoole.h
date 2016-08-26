@@ -670,8 +670,13 @@ typedef int (*swReactor_handle)(swReactor *reactor, swEvent *event);
 //------------------Pipe--------------------
 typedef struct _swPipe
 {
+    //swPipeBase, int pipes[2]
+    //swPipeEventfd, eventfd 文件描述符
+    //swPipeUnsock, socketpair()创建int socks[2] 3中pipe中的一种
     void *object;
+    //是否阻塞读写
     int blocking;
+    //读时间超时时间，Base模式下大于0则注册读时间(blocking ==1 )，否则直接同步读取
     double timeout;
 
     int (*read)(struct _swPipe *, void *recv, int length);
@@ -772,6 +777,7 @@ typedef struct _swSpinLock
 
 typedef struct _swAtomicLock
 {
+    //volatile uint32_t
     sw_atomic_t lock_t;
     uint32_t spin;
 } swAtomicLock;
@@ -784,7 +790,9 @@ typedef struct _swSem
 
 typedef struct _swLock
 {
+    //锁类型,1--6
 	int type;
+    //锁对象
     union
     {
         swMutex mutex;
@@ -1268,6 +1276,7 @@ struct _swReactor
     uint32_t event_num;
     uint32_t max_event_num;
 
+    //是否检查定时时间
     uint32_t check_timer :1;
     uint32_t running :1;
 
@@ -1280,6 +1289,7 @@ struct _swReactor
 
     /**
      * multi-thread reactor, cannot realloc sockets.
+     * 是否使用多线程reactor，创建reactor的时候没有指定
      */
     uint32_t thread :1;
 
@@ -1294,17 +1304,19 @@ struct _swReactor
     uint32_t max_socket;
 
     /**
-     * for thread
+     * for thread,多线程使用
      */
     swConnection *socket_list;
 
     /**
-     * for process
+     * for process, 多进程使用，同时thread!=1
      */
     swArray *socket_array;
 
-    swReactor_handle handle[SW_MAX_FDTYPE];        //默认事件
-    swReactor_handle write_handle[SW_MAX_FDTYPE];  //扩展事件1(一般为写事件)
+
+    //typedef int (*swReactor_handle)(swReactor *reactor, swEvent *event);
+   swReactor_handle handle[SW_MAX_FDTYPE];        //默认事件, SW_EVENT_READ || SW_EVENT_DEAULT
+    swReactor_handle write_handle[SW_MAX_FDTYPE];  //扩展事件1(一般为写事件), SW_EVENT_WRITE
     swReactor_handle error_handle[SW_MAX_FDTYPE];  //扩展事件2(一般为错误事件,如socket关闭)
 
     int (*add)(swReactor *, int fd, int fdtype);
@@ -1314,6 +1326,7 @@ struct _swReactor
     void (*free)(swReactor *);
 
     int (*setHandle)(swReactor *, int fdtype, swReactor_handle);
+    //存放callback信息的列表, onFinish时统一调用
     swDefer_callback *defer_callback_list;
 
     void (*onTimeout)(swReactor *);
